@@ -59,7 +59,7 @@ void app_step_100Hz( void)
   // Acquire latest sensor data
   const clock_t timestamp = clock(); // replace this with actual gyroscope timestamp
   imu_step( &ax, &ay, &az, &gx, &gy, &gz);
-  //mag_step( &mx, &my, &mz);
+  mag_step( &mx, &my, &mz);
   FusionVector gyroscope = {gx, gy, gz}; // replace this with actual gyroscope data in degrees/s
   FusionVector accelerometer = {ax, ay, az}; // replace this with actual accelerometer data in g
   FusionVector magnetometer = {mx, my, mz}; // replace this with actual magnetometer data in arbitrary units
@@ -78,8 +78,8 @@ void app_step_100Hz( void)
   previousTimestamp = timestamp;
 
   // Update gyroscope AHRS algorithm
-  FusionAhrsUpdateNoMagnetometer( &ahrs, gyroscope, accelerometer, deltaTime);
-  //FusionAhrsUpdate( &ahrs, gyroscope, accelerometer, magnetometer, deltaTime);
+  //FusionAhrsUpdateNoMagnetometer( &ahrs, gyroscope, accelerometer, deltaTime);
+  FusionAhrsUpdate( &ahrs, gyroscope, accelerometer, magnetometer, deltaTime);
 
   // Print algorithm outputs
   const FusionEuler euler = FusionQuaternionToEuler( FusionAhrsGetQuaternion(&ahrs));
