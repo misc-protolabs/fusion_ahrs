@@ -27,7 +27,7 @@ unsigned int sd_log_new( void)
     {
       logfile = SD_MMC.open( fname, FILE_WRITE);
 
-      len = sprintf( hdr, "idx,dt");
+      len = sprintf( hdr, "idx,dt,batt-v");
       logfile.write( (const uint8_t*)( hdr), len);
       len = sprintf( hdr, ",acc-x,acc-y,acc-z");
       logfile.write( (const uint8_t*)( hdr), len);

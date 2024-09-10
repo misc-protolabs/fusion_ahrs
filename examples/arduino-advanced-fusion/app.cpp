@@ -7,6 +7,7 @@
 #include "vfb.h"
 #include "imu.h"
 #include "mag.h"
+#include "lipo.h"
 #include "sd_log.h"
 
 float gx, gy, gz;
@@ -91,7 +92,9 @@ void app_step_100Hz( void)
   float roll = euler.angle.roll;
   float yaw = euler.angle.yaw;
 
-  printf( "%5.3f (s) : ", deltaTime);
+  float v_batt = lipo_v();
+
+  printf( "%5.3f (s), %5.1f (v) : ", deltaTime, v_batt);
   printf( " [% 5.2f, % 5.2f, % 5.2f] (g)", ax, ay, az); // g @ rest) - z==+1.0 is flat and upside down z==-1.0 is flat and right side up (i.e., in-flight for most throws)
   printf( " [% 7.2f, % 7.2f, % 7.2f] (deg/sec)", gx, gy, gz); // deg/sec @ rest - noise ~0.002 rad/sec
   printf( " [% 7.2f, % 7.2f, % 7.2f] (uT)", mx, my, mz); // @ rest ~15-23uT
@@ -99,8 +102,8 @@ void app_step_100Hz( void)
   printf( "\n");
 
   if( sd_log.logging) {
-    sd_log.len = sprintf( (char*)(&sd_log.buf[0]), "%lu,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f\n",
-      sd_log.log_idx++, deltaTime,
+    sd_log.len = sprintf( (char*)(&sd_log.buf[0]), "%lu,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f\n",
+      sd_log.log_idx++, deltaTime, v_batt,
       ax, ay, az,
       gx, gy, gz,
       mx, my, mz,

@@ -6,6 +6,7 @@
 #include "imu.h"
 #include "mag.h"
 #include "sd_log.h"
+#include "lipo.h"
 #include "app.h"
 
 bool boot_btn;
@@ -43,6 +44,8 @@ bool vfb_init( void)
   imu_init();
   //Serial.println( "- mag-init...");
   //mag_init();
+  Serial.println( "- lipo-init...");
+  lipo_init();
   Serial.println( "- sd-init...");
   sd_log_init();
   delay(100);
