@@ -1,0 +1,7 @@
+TBD:
+
+- data loggging to SD
+- accelerometer calibration
+- gyroscope calibration
+- magnetometer calibration
+- fusion calibration
