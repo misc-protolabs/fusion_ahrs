@@ -15,4 +15,6 @@ extern void vfb_step_100Hz( void);
 #define MAG_CS 27
 #define MAG_INT 35
 
+extern bool boot_btn;
+extern bool stat_led;
 #endif

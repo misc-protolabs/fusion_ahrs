@@ -1,13 +1,19 @@
 #include "Arduino.h"
+#include "SPI.h"
+#include "Wire.h"
+
 #include "vfb.h"
 #include "imu.h"
 #include "mag.h"
+#include "sd_log.h"
 #include "app.h"
+
+bool boot_btn;
+bool stat_led;
 
 bool vfb_init( void)
 {
   Serial.begin( 115200);
-  //Wire.begin();
 
   Serial.println( "- io-init...");
   pinMode(EN_3V3_SW, OUTPUT);
@@ -26,10 +32,19 @@ bool vfb_init( void)
 
   delay(100);
 
+  Serial.println( "- spi-init...");
+  SPI.begin( 18, 19, 23, 5);
+
+  Serial.println( "- i2c-init...");
+  Wire.begin();
+  Wire.setClock( 400000); // [10000,100000,400000,1000000,3400000]
+
   Serial.println( "- imu-init...");
   imu_init();
   //Serial.println( "- mag-init...");
   //mag_init();
+  Serial.println( "- sd-init...");
+  sd_log_init();
   delay(100);
 
   digitalWrite( STAT_LED, LOW);
@@ -39,7 +54,9 @@ bool vfb_init( void)
 
 void vfb_step_100Hz( void)
 {
-  digitalWrite( STAT_LED, HIGH);
+  boot_btn = !digitalRead( BOOT_BTN);
+  digitalWrite( STAT_LED, stat_led);
   //imu_step();
   //mag_step();
 }
+

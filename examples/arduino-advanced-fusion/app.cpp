@@ -4,8 +4,10 @@
 #include <time.h>
 
 #include "app.h"
+#include "vfb.h"
 #include "imu.h"
 #include "mag.h"
+#include "sd_log.h"
 
 float gx, gy, gz;
 float ax, ay, az;
@@ -95,4 +97,35 @@ void app_step_100Hz( void)
   printf( " [% 7.2f, % 7.2f, % 7.2f] (uT)", mx, my, mz); // @ rest ~15-23uT
   printf( " [% 7.1f, % 7.1f, % 7.1f] (deg)", pitch, roll, yaw); // deg
   printf( "\n");
+
+  if( sd_log.logging) {
+    sd_log.len = sprintf( (char*)(&sd_log.buf[0]), "%lu,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f\n",
+      sd_log.log_idx++, deltaTime,
+      ax, ay, az,
+      gx, gy, gz,
+      mx, my, mz,
+      pitch, roll, yaw);
+    sd_log_write();
+  }
+}
+
+void app_step_1Hz( void)
+{
+
+  static unsigned char boot_btn_dly = 2;
+
+  if( sd_log.logging) {
+    stat_led = !stat_led;
+  }
+  if( boot_btn) {
+    boot_btn_dly--;
+    if( boot_btn_dly == 0) {
+      boot_btn_dly = 3;
+      if( sd_log.logging) {
+        sd_log_close();
+      } else {
+        sd_log_new();
+      }
+    }
+  }
 }
