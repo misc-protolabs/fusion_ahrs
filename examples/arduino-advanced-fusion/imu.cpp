@@ -6,14 +6,6 @@
 // SPI instance class call
 SparkFun_ISM330DHCX_SPI imu6dof; 
 
-bool imu_int_isr_flg;
-float k_acc_x_offst = 0;
-float k_acc_y_offst = 0;
-float k_acc_z_offst = 0;
-float k_gyro_x_offst = -0.004887;
-float k_gyro_y_offst = +0.009774;
-float k_gyro_z_offst = +0.014661;
-
 void imu_init( void) {
   // Begin the IMU
   if( !imu6dof.begin(IMU_CS) )
@@ -59,17 +51,44 @@ void imu_init( void) {
 void imu_step( float* ax, float* ay, float* az, float* gx, float* gy, float* gz) {
   sfe_ism_data_t accel_raw;
   sfe_ism_data_t gyro_raw;
+  float ax_g, ay_g, az_g;
+  float gx_dps, gy_dps, gz_dps;
+  float ax_g_z1, ay_g_z1, az_g_z1;
+  float gx_dps_z1, gy_dps_z1, gz_dps_z1;
 
   if( imu6dof.checkStatus()) {
     imu6dof.getAccel( &accel_raw);        // mg
     imu6dof.getGyro( &gyro_raw);          // mdps
+
+    ax_g = ( accel_raw.xData * 0.001); // g
+    ay_g = ( accel_raw.yData * 0.001); // g
+    az_g = ( accel_raw.zData * 0.001); // 1g =~ 9.806 m/s^2
+
+    gx_dps = ( gyro_raw.xData * 0.001); // deg/s
+    gy_dps = ( gyro_raw.yData * 0.001); // deg/s
+    gz_dps = ( gyro_raw.zData * 0.001); // deg/s
+  } else {
+    ax_g = 0.0;
+    ay_g = 0.0;
+    az_g = 0.0;
+    gx_dps = 0.0;
+    gy_dps = 0.0;
+    gz_dps = 0.0;
   }
 
-  *ax = ( accel_raw.xData * 0.001); // g
-  *ay = ( accel_raw.yData * 0.001); // g
-  *az = ( accel_raw.zData * 0.001); // 1g =~ 9.806 m/s^2
+  *ax = (ax_g + ax_g_z1) / 2.0;
+  *ay = (ay_g + ay_g_z1) / 2.0;
+  *az = (az_g + az_g_z1) / 2.0;
 
-  *gx = ( gyro_raw.xData * 0.001); // deg/s
-  *gy = ( gyro_raw.yData * 0.001); // deg/s
-  *gz = ( gyro_raw.zData * 0.001); // deg/s
+  *gx = (gx_dps + gx_dps_z1) / 2.0;
+  *gy = (gy_dps + gy_dps_z1) / 2.0;
+  *gz = (gz_dps + gz_dps_z1) / 2.0;
+
+  // update states
+  ax_g_z1 = ax_g;
+  ay_g_z1 = ay_g;
+  az_g_z1 = az_g;
+  gx_dps_z1 = gx_dps;
+  gy_dps_z1 = gy_dps;
+  gz_dps_z1 = gz_dps;
 }

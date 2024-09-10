@@ -59,7 +59,8 @@ void vfb_step_100Hz( void)
 {
   boot_btn = !digitalRead( BOOT_BTN);
   digitalWrite( STAT_LED, stat_led);
-  //imu_step();
-  //mag_step();
+
+  imu_step( &ax, &ay, &az, &gx, &gy, &gz);
+  //mag_step( &mx, &my, &mz);
 }
 

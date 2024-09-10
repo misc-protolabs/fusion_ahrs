@@ -58,8 +58,7 @@ void app_step_100Hz( void)
 {
   // Acquire latest sensor data
   const clock_t timestamp = clock(); // replace this with actual gyroscope timestamp
-  imu_step( &ax, &ay, &az, &gx, &gy, &gz);
-  mag_step( &mx, &my, &mz);
+
   FusionVector gyroscope = {gx, gy, gz}; // replace this with actual gyroscope data in degrees/s
   FusionVector accelerometer = {ax, ay, az}; // replace this with actual accelerometer data in g
   FusionVector magnetometer = {mx, my, mz}; // replace this with actual magnetometer data in arbitrary units
@@ -78,8 +77,8 @@ void app_step_100Hz( void)
   previousTimestamp = timestamp;
 
   // Update gyroscope AHRS algorithm
-  //FusionAhrsUpdateNoMagnetometer( &ahrs, gyroscope, accelerometer, deltaTime);
-  FusionAhrsUpdate( &ahrs, gyroscope, accelerometer, magnetometer, deltaTime);
+  FusionAhrsUpdateNoMagnetometer( &ahrs, gyroscope, accelerometer, deltaTime);
+  //FusionAhrsUpdate( &ahrs, gyroscope, accelerometer, magnetometer, deltaTime);
 
   // Print algorithm outputs
   const FusionEuler euler = FusionQuaternionToEuler( FusionAhrsGetQuaternion(&ahrs));
@@ -97,7 +96,7 @@ void app_step_100Hz( void)
   printf( "%5.3f (s), %5.1f (v) : ", deltaTime, v_batt);
   printf( " [% 5.2f, % 5.2f, % 5.2f] (g)", ax, ay, az); // g @ rest) - z==+1.0 is flat and upside down z==-1.0 is flat and right side up (i.e., in-flight for most throws)
   printf( " [% 7.2f, % 7.2f, % 7.2f] (deg/sec)", gx, gy, gz); // deg/sec @ rest - noise ~0.002 rad/sec
-  printf( " [% 7.2f, % 7.2f, % 7.2f] (uT)", mx, my, mz); // @ rest ~15-23uT
+  printf( " [% 7.2f, % 7.2f, % 7.2f] (uT)", mx, my, mz); // @ rest ~15-50uT
   printf( " [% 7.1f, % 7.1f, % 7.1f] (deg)", pitch, roll, yaw); // deg
   printf( "\n");
 

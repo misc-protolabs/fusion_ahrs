@@ -57,24 +57,33 @@ void mag_init( void) {
 }
 
 void mag_step( float* mx, float* my, float* mz) {
-  uint32_t mag_raw_x, mag_raw_y, mag_raw_z;
   static float mx_z1, my_z1, mz_z1;
+  uint32_t mag_raw_x, mag_raw_y, mag_raw_z;
+  float mx_uT, my_uT, mz_uT;
 
   mag3dof.getMeasurementXYZ( &mag_raw_x, &mag_raw_y, &mag_raw_z);
 
   // The magnetic field values are 18-bit unsigned. The zero (mid) point is 2^17 (131072).
   // Normalize each field to +/- 800.0 uT 
-  *mx = ((float)(mag_raw_x) - (float)( k_mag_x_offst)) * (800.0 / 131072.0); // uT
-  *my = ((float)(mag_raw_y) - (float)( k_mag_y_offst)) * (800.0 / 131072.0); // uT
-  *mz = ((float)(mag_raw_z) - (float)( k_mag_z_offst)) * (800.0 / 131072.0); // 100 uT == 1 G
+  mx_uT = ((float)(mag_raw_x) - (float)( k_mag_x_offst)) * (800.0 / 131072.0); // uT
+  my_uT = ((float)(mag_raw_y) - (float)( k_mag_y_offst)) * (800.0 / 131072.0); // uT
+  mz_uT = ((float)(mag_raw_z) - (float)( k_mag_z_offst)) * (800.0 / 131072.0); // 100 uT == 1 G
 
-  if( abs( *mx) >= 200.0) { *mx = mx_z1;}
-  if( abs( *my) >= 200.0) { *my = my_z1;}
-  if( abs( *mz) >= 200.0) { *mz = mz_z1;}
+  // reject samples > 200 uT as this is likely erroneous - during calibration
+  if( abs( mx_uT) >= 200.0) { mx_uT = mx_z1;}
+  if( abs( my_uT) >= 200.0) { my_uT = my_z1;}
+  if( abs( mz_uT) >= 200.0) { mz_uT = mz_z1;}
+  // reject samples > 200 uT as this is likely erroneous - during calibration
 
-  mx_z1 = *mx;
-  my_z1 = *my;
-  mz_z1 = *mz;
+  // average k and k-1 samples
+  *mx = (mx_uT + mx_z1) / 2.0;
+  *my = (my_uT + my_z1) / 2.0;
+  *mz = (mz_uT + mz_z1) / 2.0;
+
+  // update states
+  mx_z1 = mx_uT;
+  my_z1 = my_uT;
+  mz_z1 = mz_uT;
 }
 
 bool mag_update_offsts(uint32_t *offsetX, uint32_t *offsetY, uint32_t *offsetZ) // Update the offsets
