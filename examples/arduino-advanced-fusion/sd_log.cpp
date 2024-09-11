@@ -37,6 +37,10 @@ unsigned int sd_log_new( void)
       logfile.write( (const uint8_t*)( hdr), len);
       len = sprintf( hdr, ",pitch,roll,yaw");
       logfile.write( (const uint8_t*)( hdr), len);
+      len = sprintf( hdr, ",fe-acc-x,fe-acc-y,fe-acc-z");
+      logfile.write( (const uint8_t*)( hdr), len);
+      len = sprintf( hdr, ",fl-acc-x,fl-acc-y,fl-acc-z");
+      logfile.write( (const uint8_t*)( hdr), len);
 
       len = sprintf( hdr, "\n");
       logfile.write( (const uint8_t*)( hdr), len);

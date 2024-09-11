@@ -51,6 +51,10 @@ bool app_init( void)
 
   FusionAhrsSetSettings(&ahrs, &settings);
 
+  ax = 0; ay = 0; az = 0;
+  gx = 0; gy = 0; gz = 0;
+  mx = 0; my = 0; mz = 0;
+  
   return 1;
 }
 
@@ -84,29 +88,39 @@ void app_step_100Hz( void)
   const FusionEuler euler = FusionQuaternionToEuler( FusionAhrsGetQuaternion(&ahrs));
   const FusionVector earth = FusionAhrsGetEarthAcceleration( &ahrs);
   const FusionVector lin_acc = FusionAhrsGetLinearAcceleration( &ahrs);
-  //const FusionAhrsInternalStates = FusionAhrsGetInternalStates( &ahrs);
-  //const FusionAhrsFlags = FusionAhrsGetFlags( &ahrs);
   
   float pitch = euler.angle.pitch;
   float roll = euler.angle.roll;
   float yaw = euler.angle.yaw;
+
+  float fe_ax = earth.axis.x;
+  float fe_ay = earth.axis.y;
+  float fe_az = earth.axis.z;
+
+  float fl_ax = lin_acc.axis.x;
+  float fl_ay = lin_acc.axis.y;
+  float fl_az = lin_acc.axis.z;
 
   float v_batt = lipo_v();
 
   printf( "%5.3f (s), %5.1f (v) : ", deltaTime, v_batt);
   printf( " [% 5.2f, % 5.2f, % 5.2f] (g)", ax, ay, az); // g @ rest) - z==+1.0 is flat and upside down z==-1.0 is flat and right side up (i.e., in-flight for most throws)
   printf( " [% 7.2f, % 7.2f, % 7.2f] (deg/sec)", gx, gy, gz); // deg/sec @ rest - noise ~0.002 rad/sec
-  printf( " [% 7.2f, % 7.2f, % 7.2f] (uT)", mx, my, mz); // @ rest ~15-50uT
+  //printf( " [% 7.2f, % 7.2f, % 7.2f] (uT)", mx, my, mz); // @ rest ~15-50uT
   printf( " [% 7.1f, % 7.1f, % 7.1f] (deg)", pitch, roll, yaw); // deg
+  printf( " [% 7.2f, % 7.2f, % 7.2f] (g)", fe_ax, fe_ay, fe_az); // @ rest ~0
+  //printf( " [% 7.2f, % 7.2f, % 7.2f] (g)", fl_ax, fl_ay, fl_az); // @ rest ~0
   printf( "\n");
 
   if( sd_log.logging) {
-    sd_log.len = sprintf( (char*)(&sd_log.buf[0]), "%lu,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f\n",
+    sd_log.len = sprintf( (char*)(&sd_log.buf[0]), "%lu,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f\n",
       sd_log.log_idx++, deltaTime, v_batt,
       ax, ay, az,
       gx, gy, gz,
       mx, my, mz,
-      pitch, roll, yaw);
+      pitch, roll, yaw,
+      fe_ax, fe_ay, fe_az,
+      fl_ax, fl_ay, fl_az);
     sd_log_write();
   }
 }

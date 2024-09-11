@@ -76,13 +76,13 @@ void imu_step( float* ax, float* ay, float* az, float* gx, float* gy, float* gz)
     gz_dps = 0.0;
   }
 
-  *ax = (ax_g + ax_g_z1) / 2.0;
-  *ay = (ay_g + ay_g_z1) / 2.0;
-  *az = (az_g + az_g_z1) / 2.0;
+  *ax = ax_g; //(ax_g + ax_g_z1) / 2.0;
+  *ay = ay_g; //(ay_g + ay_g_z1) / 2.0;
+  *az = az_g; //(az_g + az_g_z1) / 2.0;
 
-  *gx = (gx_dps + gx_dps_z1) / 2.0;
-  *gy = (gy_dps + gy_dps_z1) / 2.0;
-  *gz = (gz_dps + gz_dps_z1) / 2.0;
+  *gx = gx_dps; //(gx_dps + gx_dps_z1) / 2.0;
+  *gy = gy_dps; //(gy_dps + gy_dps_z1) / 2.0;
+  *gz = gz_dps; //(gz_dps + gz_dps_z1) / 2.0;
 
   // update states
   ax_g_z1 = ax_g;
