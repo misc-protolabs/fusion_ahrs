@@ -125,6 +125,16 @@ void app_step_100Hz( void)
   }
 }
 
+void app_step_10Hz( void)
+{
+
+  static unsigned char boot_btn_dly = 2;
+
+  if( sd_log.logging) {
+    stat_led = !stat_led;
+  }
+}
+
 void app_step_1Hz( void)
 {
 
