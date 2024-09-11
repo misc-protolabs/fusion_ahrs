@@ -5,3 +5,10 @@ TBD:
 - gyroscope calibration
 - magnetometer calibration
 - fusion calibration
+- add altitude (barometric pressure) sensor
+- add http server for download of data
+
+build metrics:
+11-sep-2024
+Sketch uses 1084629 bytes (82%) of program storage space. Maximum is 1310720 bytes.
+Global variables use 51276 bytes (15%) of dynamic memory, leaving 276404 bytes for local variables. Maximum is 327680 bytes.

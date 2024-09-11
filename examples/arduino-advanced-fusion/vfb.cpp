@@ -62,5 +62,6 @@ void vfb_step_100Hz( void)
 
   imu_step( &ax, &ay, &az, &gx, &gy, &gz);
   //mag_step( &mx, &my, &mz);
+  sd_log_srvr_step();
 }
 

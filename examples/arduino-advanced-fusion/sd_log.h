@@ -14,6 +14,7 @@ extern sd_log_T sd_log;
 extern void sd_log_init( void);
 extern void sd_log_write( void);
 extern void sd_log_close( void);
+extern void sd_log_srvr_step( void);
 extern unsigned int sd_log_new( void);
 
 #endif

@@ -13,6 +13,9 @@
 float gx, gy, gz;
 float ax, ay, az;
 float mx, my, mz;
+float pitch, roll, yaw;
+float fe_ax, fe_ay, fe_az;
+float fl_ax, fl_ay, fl_az;
 
 #define SAMPLE_RATE (100) // replace this with actual sample rate
 
@@ -89,28 +92,19 @@ void app_step_100Hz( void)
   const FusionVector earth = FusionAhrsGetEarthAcceleration( &ahrs);
   const FusionVector lin_acc = FusionAhrsGetLinearAcceleration( &ahrs);
   
-  float pitch = euler.angle.pitch;
-  float roll = euler.angle.roll;
-  float yaw = euler.angle.yaw;
+  pitch = euler.angle.pitch;
+  roll = euler.angle.roll;
+  yaw = euler.angle.yaw;
 
-  float fe_ax = earth.axis.x;
-  float fe_ay = earth.axis.y;
-  float fe_az = earth.axis.z;
+  fe_ax = earth.axis.x;
+  fe_ay = earth.axis.y;
+  fe_az = earth.axis.z;
 
-  float fl_ax = lin_acc.axis.x;
-  float fl_ay = lin_acc.axis.y;
-  float fl_az = lin_acc.axis.z;
+  fl_ax = lin_acc.axis.x;
+  fl_ay = lin_acc.axis.y;
+  fl_az = lin_acc.axis.z;
 
   float v_batt = lipo_v();
-
-  printf( "%5.3f (s), %5.1f (v) : ", deltaTime, v_batt);
-  printf( " [% 5.2f, % 5.2f, % 5.2f] (g)", ax, ay, az); // g @ rest) - z==+1.0 is flat and upside down z==-1.0 is flat and right side up (i.e., in-flight for most throws)
-  printf( " [% 7.2f, % 7.2f, % 7.2f] (deg/sec)", gx, gy, gz); // deg/sec @ rest - noise ~0.002 rad/sec
-  //printf( " [% 7.2f, % 7.2f, % 7.2f] (uT)", mx, my, mz); // @ rest ~15-50uT
-  printf( " [% 7.1f, % 7.1f, % 7.1f] (deg)", pitch, roll, yaw); // deg
-  printf( " [% 7.2f, % 7.2f, % 7.2f] (g)", fe_ax, fe_ay, fe_az); // @ rest ~0
-  //printf( " [% 7.2f, % 7.2f, % 7.2f] (g)", fl_ax, fl_ay, fl_az); // @ rest ~0
-  printf( "\n");
 
   if( sd_log.logging) {
     sd_log.len = sprintf( (char*)(&sd_log.buf[0]), "%lu,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f\n",
@@ -131,6 +125,17 @@ void app_step_10Hz( void)
   static unsigned char boot_btn_dly = 2;
 
   if( sd_log.logging) {
+    float v_batt = lipo_v();
+
+    printf( "%5.1f (v) : ", v_batt);
+    printf( " [% 5.2f, % 5.2f, % 5.2f] (g)", ax, ay, az); // g @ rest) - z==+1.0 is flat and upside down z==-1.0 is flat and right side up (i.e., in-flight for most throws)
+    printf( " [% 7.2f, % 7.2f, % 7.2f] (deg/sec)", gx, gy, gz); // deg/sec @ rest - noise ~0.002 rad/sec
+    //printf( " [% 7.2f, % 7.2f, % 7.2f] (uT)", mx, my, mz); // @ rest ~15-50uT
+    printf( " [% 7.1f, % 7.1f, % 7.1f] (deg)", pitch, roll, yaw); // deg
+    printf( " [% 7.2f, % 7.2f, % 7.2f] (g)", fe_ax, fe_ay, fe_az); // @ rest ~0
+    //printf( " [% 7.2f, % 7.2f, % 7.2f] (g)", fl_ax, fl_ay, fl_az); // @ rest ~0
+    printf( "\n");
+
     stat_led = !stat_led;
   }
 }
@@ -140,9 +145,10 @@ void app_step_1Hz( void)
 
   static unsigned char boot_btn_dly = 2;
 
-  if( sd_log.logging) {
+  if( !sd_log.logging) {
     stat_led = !stat_led;
   }
+
   if( boot_btn) {
     boot_btn_dly--;
     if( boot_btn_dly == 0) {
