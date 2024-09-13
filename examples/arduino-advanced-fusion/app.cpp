@@ -66,14 +66,14 @@ void app_step_100Hz( void)
   // Acquire latest sensor data
   const clock_t timestamp = clock(); // replace this with actual gyroscope timestamp
 
-  FusionVector gyroscope = {gx, gy, gz}; // replace this with actual gyroscope data in degrees/s
-  FusionVector accelerometer = {ax, ay, az}; // replace this with actual accelerometer data in g
-  FusionVector magnetometer = {mx, my, mz}; // replace this with actual magnetometer data in arbitrary units
+  FusionVector gyroscope = {-gy, gx, gz}; // replace this with actual gyroscope data in degrees/s - NED?
+  FusionVector accelerometer = {-ay, ax, az}; // replace this with actual accelerometer data in g - NED?
+  //FusionVector magnetometer = {-my, mx, mz}; // replace this with actual magnetometer data in arbitrary units - NED?
 
   // Apply calibration
   gyroscope = FusionCalibrationInertial(gyroscope, gyroscopeMisalignment, gyroscopeSensitivity, gyroscopeOffset);
   accelerometer = FusionCalibrationInertial(accelerometer, accelerometerMisalignment, accelerometerSensitivity, accelerometerOffset);
-  magnetometer = FusionCalibrationMagnetic(magnetometer, softIronMatrix, hardIronOffset);
+  //magnetometer = FusionCalibrationMagnetic(magnetometer, softIronMatrix, hardIronOffset);
 
   // Update gyroscope offset correction algorithm
   gyroscope = FusionOffsetUpdate(&offset, gyroscope);

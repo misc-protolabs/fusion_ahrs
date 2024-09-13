@@ -49,12 +49,12 @@ void imu_init( void) {
 }
 
 void imu_step( float* ax, float* ay, float* az, float* gx, float* gy, float* gz) {
+  static float ax_g_z1, ay_g_z1, az_g_z1;
+  static float gx_dps_z1, gy_dps_z1, gz_dps_z1;
   sfe_ism_data_t accel_raw;
   sfe_ism_data_t gyro_raw;
   float ax_g, ay_g, az_g;
   float gx_dps, gy_dps, gz_dps;
-  float ax_g_z1, ay_g_z1, az_g_z1;
-  float gx_dps_z1, gy_dps_z1, gz_dps_z1;
 
   if( imu6dof.checkStatus()) {
     imu6dof.getAccel( &accel_raw);        // mg
@@ -68,12 +68,12 @@ void imu_step( float* ax, float* ay, float* az, float* gx, float* gy, float* gz)
     gy_dps = ( gyro_raw.yData * 0.001); // deg/s
     gz_dps = ( gyro_raw.zData * 0.001); // deg/s
   } else {
-    ax_g = 0.0;
-    ay_g = 0.0;
-    az_g = 0.0;
-    gx_dps = 0.0;
-    gy_dps = 0.0;
-    gz_dps = 0.0;
+    ax_g = ax_g_z1;
+    ay_g = ay_g_z1;
+    az_g = az_g_z1;
+    gx_dps = gx_dps_z1;
+    gy_dps = gy_dps_z1;
+    gz_dps = gz_dps_z1;
   }
 
   *ax = ax_g; //(ax_g + ax_g_z1) / 2.0;

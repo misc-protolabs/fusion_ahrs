@@ -41,7 +41,7 @@ unsigned int sd_log_new( void)
   int len;
   for( n=0; n<0xffff; n++)
   {
-    sprintf( (char*)(&fname[0]), "/logs/%08x.csv", n);
+    sprintf( (char*)(&fname[0]), "/logs/x%08x.csv", n);
     stat = SD_MMC.exists( (const char*)(&fname[0]));
     if( !stat)
     {
