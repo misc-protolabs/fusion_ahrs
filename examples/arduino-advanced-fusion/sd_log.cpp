@@ -27,8 +27,8 @@ String file_size(int bytes);
 File logfile;
 sd_log_T sd_log;
 
-char buf_ssid[64];// = "palomino";
-char buf_pass[64];// = "treasures2024";
+char buf_ssid[64];
+char buf_pass[64];
 
 unsigned int sd_log_new( void)
 {
