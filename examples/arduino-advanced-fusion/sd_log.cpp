@@ -27,6 +27,9 @@ String file_size(int bytes);
 File logfile;
 sd_log_T sd_log;
 
+char buf_ssid[64];// = "palomino";
+char buf_pass[64];// = "treasures2024";
+
 unsigned int sd_log_new( void)
 {
   unsigned int n = 0;
@@ -109,13 +112,42 @@ void sdmmc_init( void)
   Serial.printf("Used space: %lluMB\n", SD_MMC.usedBytes() / (1024 * 1024));
 
   unsigned int n_log = sd_log_new();
+
+  char fname[32];
+  //uint8_t buf_ssid[64];
+  //uint8_t buf_pass[64];
+  int idx;
+  char c;
+  sprintf( (char*)(&fname[0]), "/logs/x%08x.csv", 0);
+  File credentialsfile = SD_MMC.open( fname);
+
+  if( credentialsfile.available()) {
+    //Serial.printf( "reading credentials...\n");
+    //credentialsfile.read( &buf_user_name[0], 2);
+    idx = 0;
+    // 1st arg
+    c = '-';
+    while( c != ',') {
+      c = credentialsfile.read();
+      buf_ssid[idx++] = c;
+    }
+    idx = 0;
+    while( credentialsfile.available()) {
+      c = credentialsfile.read();
+      buf_pass[idx++] = c;
+    }
+    credentialsfile.close();
+    //Serial.printf( "ssid - %s : pass - %s\n", (const char*)&buf_ssid[0], (const char*)&buf_pass[0]);
+  }
 }
 
 void sd_log_init( void) {
-  Serial.println( "---srvr-init.");
-  srvr_init();
   Serial.println( "---sdmmc-init.");
   sdmmc_init();
+  if( buf_ssid[0] != NULL && buf_pass[0] != NULL) {
+    Serial.println( "---srvr-init.");
+    srvr_init();
+  }
 }
 
 void sd_log_write( void)
@@ -146,10 +178,9 @@ void sd_log_srvr_step( void) {
 }
 
 void srvr_init( void) {
-  const char* ssid = "palomino";
-  const char* pass = "treasures2024";
   static char dly = 5;
-  WiFi.begin( ssid, pass);
+  //WiFi.begin( ssid, pass);
+  WiFi.begin( (const char*)&buf_ssid[0], (const char*)&buf_pass[0]);
   while( (WiFi.status() != WL_CONNECTED) && (dly > 0)){
     delay(500);
     dly--;
@@ -158,7 +189,7 @@ void srvr_init( void) {
   if( WiFi.status() == WL_CONNECTED) {
     Serial.println("");
     Serial.print("Connected to ");
-    Serial.println(ssid);
+    Serial.println( (const char*)&buf_ssid[0]);
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
 
