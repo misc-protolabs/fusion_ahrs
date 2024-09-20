@@ -5,6 +5,7 @@
 
 bool mag_update_offsts(uint32_t *offsetX, uint32_t *offsetY, uint32_t *offsetZ);
 
+bool mag_present;
 SFE_MMC5983MA mag3dof;
 
 uint32_t k_mag_x_offst = 131072;
@@ -21,11 +22,12 @@ float k_mag_cal_A[3][3] = {
 
 void mag_init( void) {
   // Begin the Mag
+  mag_present = 0;
   if( !mag3dof.begin(MAG_CS) )
   {
     Serial.println(F("Mag did not begin. Freezing..."));
-    while(1);
   }
+  mag_present = 1;
 
   mag3dof.softReset();
 
@@ -61,6 +63,12 @@ void mag_step( float* mx, float* my, float* mz) {
   uint32_t mag_raw_x, mag_raw_y, mag_raw_z;
   float mx_uT, my_uT, mz_uT;
 
+  if( !mag_present) {
+    *mx = 0.0;
+    *my = 0.0;
+    *mz = 0.0;
+    return;
+  }
   mag3dof.getMeasurementXYZ( &mag_raw_x, &mag_raw_y, &mag_raw_z);
 
   // The magnetic field values are 18-bit unsigned. The zero (mid) point is 2^17 (131072).

@@ -7,6 +7,7 @@ TBD:
 - fusion calibration
 - add altitude (barometric pressure) sensor
 - add http server for download of data
+- add support for using txt file to store credentials instead of storing it in the code...
 
 build metrics:
 11-sep-2024

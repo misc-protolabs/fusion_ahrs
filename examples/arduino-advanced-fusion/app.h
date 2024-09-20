@@ -9,5 +9,6 @@ extern void app_step_1Hz( void);
 extern float gx, gy, gz;
 extern float ax, ay, az;
 extern float mx, my, mz;
+extern float degC, altitude;
 
 #endif

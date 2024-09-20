@@ -9,6 +9,7 @@
 #include "mag.h"
 #include "lipo.h"
 #include "sd_log.h"
+#include "util.h"
 
 float gx, gy, gz;
 float ax, ay, az;
@@ -16,6 +17,8 @@ float mx, my, mz;
 float pitch, roll, yaw;
 float fe_ax, fe_ay, fe_az;
 float fl_ax, fl_ay, fl_az;
+float altitude, degC;
+float altitude_filt, degC_filt;
 
 #define SAMPLE_RATE (100) // replace this with actual sample rate
 
@@ -57,23 +60,29 @@ bool app_init( void)
   ax = 0; ay = 0; az = 0;
   gx = 0; gy = 0; gz = 0;
   mx = 0; my = 0; mz = 0;
+  altitude = 0;
+  degC = 0;
   
   return 1;
 }
 
 void app_step_100Hz( void)
 {
+  static float altitude_filt_z1;
+  static float degC_filt_z1;
   // Acquire latest sensor data
   const clock_t timestamp = clock(); // replace this with actual gyroscope timestamp
 
   FusionVector gyroscope = {-gy, gx, gz}; // replace this with actual gyroscope data in degrees/s - NED?
   FusionVector accelerometer = {-ay, ax, az}; // replace this with actual accelerometer data in g - NED?
-  //FusionVector magnetometer = {-my, mx, mz}; // replace this with actual magnetometer data in arbitrary units - NED?
+  FusionVector magnetometer = {-my, mx, mz}; // replace this with actual magnetometer data in arbitrary units - NED?
 
   // Apply calibration
   gyroscope = FusionCalibrationInertial(gyroscope, gyroscopeMisalignment, gyroscopeSensitivity, gyroscopeOffset);
   accelerometer = FusionCalibrationInertial(accelerometer, accelerometerMisalignment, accelerometerSensitivity, accelerometerOffset);
-  //magnetometer = FusionCalibrationMagnetic(magnetometer, softIronMatrix, hardIronOffset);
+  if( mag_present) {
+    magnetometer = FusionCalibrationMagnetic(magnetometer, softIronMatrix, hardIronOffset);
+  }
 
   // Update gyroscope offset correction algorithm
   gyroscope = FusionOffsetUpdate(&offset, gyroscope);
@@ -84,8 +93,11 @@ void app_step_100Hz( void)
   previousTimestamp = timestamp;
 
   // Update gyroscope AHRS algorithm
-  FusionAhrsUpdateNoMagnetometer( &ahrs, gyroscope, accelerometer, deltaTime);
-  //FusionAhrsUpdate( &ahrs, gyroscope, accelerometer, magnetometer, deltaTime);
+  if( !mag_present) {
+    FusionAhrsUpdateNoMagnetometer( &ahrs, gyroscope, accelerometer, deltaTime);
+  } else {
+    FusionAhrsUpdate( &ahrs, gyroscope, accelerometer, magnetometer, deltaTime);
+  }
 
   // Print algorithm outputs
   const FusionEuler euler = FusionQuaternionToEuler( FusionAhrsGetQuaternion(&ahrs));
@@ -106,6 +118,9 @@ void app_step_100Hz( void)
 
   float v_batt = lipo_v();
 
+  //altitude_filt = filt_1ord( altitude, altitude_filt_z1, 0.10, 0.01);
+  //degC_filt = filt_1ord( degC, degC_filt_z1, 1.0, 0.01);
+
   if( sd_log.logging) {
     sd_log.len = sprintf( (char*)(&sd_log.buf[0]), "%lu,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f\n",
       sd_log.log_idx++, deltaTime, v_batt,
@@ -117,6 +132,9 @@ void app_step_100Hz( void)
       fl_ax, fl_ay, fl_az);
     sd_log_write();
   }
+
+  //altitude_filt_z1 = altitude_filt;
+  //degC_filt_z1 = degC_filt;
 }
 
 void app_step_10Hz( void)
@@ -128,11 +146,12 @@ void app_step_10Hz( void)
     float v_batt = lipo_v();
 
     printf( "%5.1f (v) : ", v_batt);
-    printf( " [% 5.2f, % 5.2f, % 5.2f] (g)", ax, ay, az); // g @ rest) - z==+1.0 is flat and upside down z==-1.0 is flat and right side up (i.e., in-flight for most throws)
-    printf( " [% 7.2f, % 7.2f, % 7.2f] (deg/sec)", gx, gy, gz); // deg/sec @ rest - noise ~0.002 rad/sec
-    //printf( " [% 7.2f, % 7.2f, % 7.2f] (uT)", mx, my, mz); // @ rest ~15-50uT
-    printf( " [% 7.1f, % 7.1f, % 7.1f] (deg)", pitch, roll, yaw); // deg
-    printf( " [% 7.2f, % 7.2f, % 7.2f] (g)", fe_ax, fe_ay, fe_az); // @ rest ~0
+    printf( " [% 5.1f, % 5.1f, % 5.1f] (g)", ax, ay, az); // g @ rest) - z==+1.0 is flat and upside down z==-1.0 is flat and right side up (i.e., in-flight for most throws)
+    printf( " [% 6.1f, % 6.1f, % 6.1f] (deg/sec)", gx, gy, gz); // deg/sec @ rest - noise ~0.002 rad/sec
+    printf( " [% 7.2f, % 7.2f, % 7.2f] (uT)", mx, my, mz); // @ rest ~15-50uT
+    printf( " [% 6.1f, % 6.1f, % 6.1f] (deg)", pitch, roll, yaw); // deg
+    //printf( " [% 7.1f, % 6.1f]", altitude_filt, degC_filt); // m, degC
+    printf( " [% 6.1f, % 6.1f, % 6.1f] (g)", fe_ax, fe_ay, fe_az); // @ rest ~0
     //printf( " [% 7.2f, % 7.2f, % 7.2f] (g)", fl_ax, fl_ay, fl_az); // @ rest ~0
     printf( "\n");
 

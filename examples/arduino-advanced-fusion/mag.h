@@ -4,4 +4,5 @@
 extern void mag_init( void);
 extern void mag_step( float*, float*, float*);
 
+extern bool mag_present;
 #endif
