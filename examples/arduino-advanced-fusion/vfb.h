@@ -4,6 +4,7 @@
 extern bool vfb_init( void);
 extern unsigned int vfb_new_log( void);
 extern void vfb_step_100Hz( void);
+extern void vfb_deep_sleep( void);
 
 // Tested with Espressif ESP32 v2.0.5 and the "ESP32 Dev Module" board definition
 #define EN_3V3_SW 32 // The 3.3V_SW regulator Enable pin is connected to D32

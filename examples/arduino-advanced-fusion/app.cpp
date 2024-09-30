@@ -19,6 +19,7 @@ float fe_ax, fe_ay, fe_az;
 float fl_ax, fl_ay, fl_az;
 float altitude, degC;
 float altitude_filt, degC_filt;
+float acc_filt, gz_filt;
 
 #define SAMPLE_RATE (100) // replace this with actual sample rate
 
@@ -62,6 +63,8 @@ bool app_init( void)
   mx = 0; my = 0; mz = 0;
   altitude = 0;
   degC = 0;
+  acc_filt = 0.0;
+  gz_filt = 0.0;
   
   return 1;
 }
@@ -73,9 +76,9 @@ void app_step_100Hz( void)
   // Acquire latest sensor data
   const clock_t timestamp = clock(); // replace this with actual gyroscope timestamp
 
-  FusionVector gyroscope = {-gy, gx, gz}; // replace this with actual gyroscope data in degrees/s - NED?
-  FusionVector accelerometer = {-ay, ax, az}; // replace this with actual accelerometer data in g - NED?
-  FusionVector magnetometer = {-my, mx, mz}; // replace this with actual magnetometer data in arbitrary units - NED?
+  FusionVector gyroscope = {gx, gy, gz}; // replace this with actual gyroscope data in degrees/s - NED?
+  FusionVector accelerometer = {ax, ay, az}; // replace this with actual accelerometer data in g - NED?
+  FusionVector magnetometer = {mx, my, mz}; // replace this with actual magnetometer data in arbitrary units - NED?
 
   // Apply calibration
   gyroscope = FusionCalibrationInertial(gyroscope, gyroscopeMisalignment, gyroscopeSensitivity, gyroscopeOffset);
@@ -141,24 +144,38 @@ void app_step_10Hz( void)
 {
 
   static unsigned char boot_btn_dly = 2;
+  static float acc_filt_z1, gz_filt_z1;
+
+  float acc = sqrt( ax*ax + ay*ay + az*az);
+  acc_filt = filt_1ord( acc, acc_filt_z1, 1.0, 0.10);
+  gz_filt = filt_1ord( gz, gz_filt_z1, 1.0, 0.10);
 
   if( sd_log.logging) {
     float v_batt = lipo_v();
-
     printf( "%5.1f (v) : ", v_batt);
     printf( " [% 5.1f, % 5.1f, % 5.1f] (g)", ax, ay, az); // g @ rest) - z==+1.0 is flat and upside down z==-1.0 is flat and right side up (i.e., in-flight for most throws)
     printf( " [% 6.1f, % 6.1f, % 6.1f] (deg/sec)", gx, gy, gz); // deg/sec @ rest - noise ~0.002 rad/sec
     printf( " [% 7.2f, % 7.2f, % 7.2f] (uT)", mx, my, mz); // @ rest ~15-50uT
-    printf( " [% 6.1f, % 6.1f, % 6.1f] (deg)", pitch, roll, yaw); // deg
+    printf( " [% 6.1f, % 6.1f, % 6.1f] (deg)", roll, pitch, yaw); // deg
     //printf( " [% 7.1f, % 6.1f]", altitude_filt, degC_filt); // m, degC
     printf( " [% 6.1f, % 6.1f, % 6.1f] (g)", fe_ax, fe_ay, fe_az); // @ rest ~0
     //printf( " [% 7.2f, % 7.2f, % 7.2f] (g)", fl_ax, fl_ay, fl_az); // @ rest ~0
     printf( "\n");
-
+/*
+    printf( "%f,%f,%f", ax, ay, az); // g @ rest) - z==+1.0 is flat and upside down z==-1.0 is flat and right side up (i.e., in-flight for most throws)
+    printf( "%f,%f,%f", gx, gy, gz); // deg/sec @ rest - noise ~0.002 rad/sec
+    printf( "%f,%f,%f", mx, my, mz); // @ rest ~15-50uT
+    printf( "%f,%f,%f", roll, pitch, yaw); // deg
+    printf( "\n");
+*/
     stat_led = !stat_led;
   }
+
+  acc_filt_z1 = acc_filt;
+  gz_filt_z1 = gz_filt;
 }
 
+short k_sleep_dly = 30;
 void app_step_1Hz( void)
 {
 
@@ -178,5 +195,17 @@ void app_step_1Hz( void)
         sd_log_new();
       }
     }
+  }
+
+  static short sleep_dly = k_sleep_dly;
+  bool acc_ok = acc_filt <= 1.1;
+  bool gyro_ok = abs( gz_filt) <= 1.5;
+  if( acc_ok && gyro_ok) {
+    if( sleep_dly-- <= 0) {
+      sleep_dly = k_sleep_dly;
+      vfb_deep_sleep();
+    }
+  } else {
+    sleep_dly = k_sleep_dly;
   }
 }
