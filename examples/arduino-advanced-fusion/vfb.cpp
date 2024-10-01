@@ -47,8 +47,8 @@ bool vfb_init( void)
 
   Serial.println( "- imu-init...");
   imu_init();
-  //Serial.println( "- baro-init...");
-  //baro_init();
+  Serial.println( "- baro-init...");
+  baro_init();
   Serial.println( "- mag-init...");
   mag_init();
   Serial.println( "- lipo-init...");
@@ -69,7 +69,7 @@ void vfb_step_100Hz( void)
   digitalWrite( STAT_LED, stat_led);
 
   imu_step( &ax, &ay, &az, &gx, &gy, &gz);
-  //baro_step( &altitude, &degC);
+  baro_step( &altitude, &degC);
   mag_step( &mx, &my, &mz);
   sd_log_srvr_step();
 }
@@ -90,6 +90,13 @@ void vfb_print_wakeup_reason( void) {
 }
 
 void vfb_deep_sleep( void) {
+
+  // shut everything down
+  if( sd_log.logging) {
+    sd_log_close();
+  }
+
+  // put the esp32 to sleep
   esp_sleep_enable_ext0_wakeup( (gpio_num_t)(BOOT_BTN), 0);  //1 = High, 0 = Low
   // Configure pullup/downs via RTCIO to tie wakeup pins to inactive level during deepsleep.
   // EXT0 resides in the same power domain (RTC_PERIPH) as the RTC IO pullup/downs.

@@ -18,7 +18,7 @@ float pitch, roll, yaw;
 float fe_ax, fe_ay, fe_az;
 float fl_ax, fl_ay, fl_az;
 float altitude, degC;
-float altitude_filt, degC_filt;
+float alt_filt, degC_filt;
 float acc_filt, gz_filt;
 
 #define SAMPLE_RATE (100) // replace this with actual sample rate
@@ -65,13 +65,14 @@ bool app_init( void)
   degC = 0;
   acc_filt = 0.0;
   gz_filt = 0.0;
+  alt_filt = 0.0;
   
   return 1;
 }
 
 void app_step_100Hz( void)
 {
-  static float altitude_filt_z1;
+  static float alt_filt_z1;
   static float degC_filt_z1;
   // Acquire latest sensor data
   const clock_t timestamp = clock(); // replace this with actual gyroscope timestamp
@@ -121,22 +122,23 @@ void app_step_100Hz( void)
 
   float v_batt = lipo_v();
 
-  //altitude_filt = filt_1ord( altitude, altitude_filt_z1, 0.10, 0.01);
+  alt_filt = filt_1ord( altitude, alt_filt_z1, 0.10, 0.01);
   //degC_filt = filt_1ord( degC, degC_filt_z1, 1.0, 0.01);
 
   if( sd_log.logging) {
-    sd_log.len = sprintf( (char*)(&sd_log.buf[0]), "%lu,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f\n",
+    sd_log.len = sprintf( (char*)(&sd_log.buf[0]), "%lu,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f,%f,%f, %f\n",
       sd_log.log_idx++, deltaTime, v_batt,
       ax, ay, az,
       gx, gy, gz,
       mx, my, mz,
       pitch, roll, yaw,
       fe_ax, fe_ay, fe_az,
-      fl_ax, fl_ay, fl_az);
+      fl_ax, fl_ay, fl_az,
+      altitude);
     sd_log_write();
   }
 
-  //altitude_filt_z1 = altitude_filt;
+  alt_filt_z1 = alt_filt;
   //degC_filt_z1 = degC_filt;
 }
 
@@ -157,16 +159,16 @@ void app_step_10Hz( void)
     printf( " [% 6.1f, % 6.1f, % 6.1f] (deg/sec)", gx, gy, gz); // deg/sec @ rest - noise ~0.002 rad/sec
     printf( " [% 7.2f, % 7.2f, % 7.2f] (uT)", mx, my, mz); // @ rest ~15-50uT
     printf( " [% 6.1f, % 6.1f, % 6.1f] (deg)", roll, pitch, yaw); // deg
-    //printf( " [% 7.1f, % 6.1f]", altitude_filt, degC_filt); // m, degC
-    printf( " [% 6.1f, % 6.1f, % 6.1f] (g)", fe_ax, fe_ay, fe_az); // @ rest ~0
+    printf( " [% 7.2f, % 4.1f]", alt_filt, degC_filt); // m, degC
+    //printf( " [% 6.1f, % 6.1f, % 6.1f] (g)", fe_ax, fe_ay, fe_az); // @ rest ~0
     //printf( " [% 7.2f, % 7.2f, % 7.2f] (g)", fl_ax, fl_ay, fl_az); // @ rest ~0
     printf( "\n");
 /*
-    printf( "%f,%f,%f", ax, ay, az); // g @ rest) - z==+1.0 is flat and upside down z==-1.0 is flat and right side up (i.e., in-flight for most throws)
-    printf( "%f,%f,%f", gx, gy, gz); // deg/sec @ rest - noise ~0.002 rad/sec
-    printf( "%f,%f,%f", mx, my, mz); // @ rest ~15-50uT
-    printf( "%f,%f,%f", roll, pitch, yaw); // deg
-    printf( "\n");
+    printf( "%i,%i,%i,", (short)(ax*100), (short)(ay*100), (short)(az*100)); // g @ rest) - z==+1.0 is flat and upside down z==-1.0 is flat and right side up (i.e., in-flight for most throws)
+    printf( "%i,%i,%i,", (short)(gx*100), (short)(gy*100), (short)(gz*100)); // deg/sec @ rest - noise ~0.002 rad/sec
+    printf( "%i,%i,%i", (short)(mx*100), (short)(my*100), (short)(mz*100)); // @ rest ~15-50uT
+    //printf( "%i,%i,%i", roll, pitch, yaw); // deg
+    printf( "\r\n");
 */
     stat_led = !stat_led;
   }
@@ -200,7 +202,8 @@ void app_step_1Hz( void)
   static short sleep_dly = k_sleep_dly;
   bool acc_ok = acc_filt <= 1.1;
   bool gyro_ok = abs( gz_filt) <= 1.5;
-  if( acc_ok && gyro_ok) {
+  bool srvr_ok = !sd_log.srvr_active;
+  if( acc_ok && gyro_ok && srvr_ok) {
     if( sleep_dly-- <= 0) {
       sleep_dly = k_sleep_dly;
       vfb_deep_sleep();

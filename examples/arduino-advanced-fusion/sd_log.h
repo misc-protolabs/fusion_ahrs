@@ -7,6 +7,7 @@ typedef struct {
   unsigned long log_idx;
   bool sd_present;
   bool logging;
+  bool srvr_active;
 } sd_log_T;
 
 extern sd_log_T sd_log;

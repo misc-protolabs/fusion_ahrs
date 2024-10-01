@@ -64,6 +64,8 @@ unsigned int sd_log_new( void)
       logfile.write( (const uint8_t*)( hdr), len);
       len = sprintf( hdr, ",fl-acc-x,fl-acc-y,fl-acc-z");
       logfile.write( (const uint8_t*)( hdr), len);
+      len = sprintf( hdr, ",altitude-m");
+      logfile.write( (const uint8_t*)( hdr), len);
 
       len = sprintf( hdr, "\n");
       logfile.write( (const uint8_t*)( hdr), len);
@@ -114,40 +116,50 @@ void sdmmc_init( void)
   unsigned int n_log = sd_log_new();
 
   char fname[32];
-  //uint8_t buf_ssid[64];
-  //uint8_t buf_pass[64];
   int idx;
   char c;
   sprintf( (char*)(&fname[0]), "/logs/x%08x.csv", 0);
   File credentialsfile = SD_MMC.open( fname);
 
   if( credentialsfile.available()) {
-    //Serial.printf( "reading credentials...\n");
-    //credentialsfile.read( &buf_user_name[0], 2);
-    idx = 0;
-    // 1st arg
+    //Serial.printf( "reading credentials:");
     c = '-';
-    while( c != ',') {
+    // 1st arg
+    idx = 0;
+    while( credentialsfile.available() && idx != -1) {
       c = credentialsfile.read();
-      buf_ssid[idx++] = c;
+      if( c == ',') {
+        idx = -1;
+      } else {
+        buf_ssid[idx++] = c;
+      }
     }
     idx = 0;
-    while( credentialsfile.available()) {
+    while( credentialsfile.available() && idx != -1) {
       c = credentialsfile.read();
-      buf_pass[idx++] = c;
+      if( c == '\r' || c == '\n') {
+        idx = -1;
+      } else {
+        buf_pass[idx++] = c;
+      }
     }
     credentialsfile.close();
-    //Serial.printf( "ssid - %s : pass - %s\n", (const char*)&buf_ssid[0], (const char*)&buf_pass[0]);
+    //Serial.printf( "%s:%s:\n", (const char*)&buf_ssid[0], (const char*)&buf_pass[0]);
   }
 }
 
 void sd_log_init( void) {
   Serial.println( "---sdmmc-init.");
+  sd_log.srvr_active = 0;
+  sd_log.logging = 0;
+  sd_log.sd_present = 0;
   sdmmc_init();
+  /*
   if( buf_ssid[0] != NULL && buf_pass[0] != NULL) {
     Serial.println( "---srvr-init.");
     srvr_init();
   }
+  */
 }
 
 void sd_log_write( void)
@@ -162,6 +174,12 @@ void sd_log_write( void)
 void sd_log_close( void)
 {
   logfile.close();
+  
+  if( buf_ssid[0] != NULL && buf_pass[0] != NULL) {
+    Serial.println( "---srvr-init.");
+    srvr_init();
+  }
+  
   sd_log.logging = 0;
 }
 
@@ -173,12 +191,15 @@ void sd_log_srvr_step( void) {
   {
     if( WiFi.status() == WL_CONNECTED) {
       server.handleClient(); //Listen for client connections
+      sd_log.srvr_active = 1;
     }
+  } else {
+    sd_log.srvr_active = 0;
   }
 }
 
 void srvr_init( void) {
-  static char dly = 5;
+  static char dly = 30;
   //WiFi.begin( ssid, pass);
   WiFi.begin( (const char*)&buf_ssid[0], (const char*)&buf_pass[0]);
   while( (WiFi.status() != WL_CONNECTED) && (dly > 0)){
@@ -186,6 +207,7 @@ void srvr_init( void) {
     dly--;
     Serial.print(".");
   }
+  Serial.println();
   if( WiFi.status() == WL_CONNECTED) {
     Serial.println("");
     Serial.print("Connected to ");
@@ -194,7 +216,7 @@ void srvr_init( void) {
     Serial.println(WiFi.localIP());
 
     //Set your preferred server name, if you use "mcserver" the address would be http://mcserver.local/
-    if (!MDNS.begin("esp32")) 
+    if (!MDNS.begin("fdev")) 
     {          
       Serial.println(F("Error setting up MDNS responder!")); 
       //ESP.restart(); 

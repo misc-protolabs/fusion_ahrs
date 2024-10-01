@@ -34,7 +34,8 @@ void baro_step( float* altitude, float* degC) {
   //float pressure = baro.readPressure();
   //float p_term = pow((pressure/101326.0), 0.1902632);
   *altitude = baro.readAltitude();
-  *degC = baro.readTemp();
+  *degC = 0.0;
+  //*degC = baro.readTemp();
 }
 
 void set_sealevel(float pressure) {
